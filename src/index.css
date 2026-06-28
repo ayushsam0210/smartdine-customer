@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Keyframes ────────────────────────────────────────────────────────── */
+/* Must live here so Tailwind's @layer components can reference them */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes fade-up {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  0%   { opacity: 0; transform: scale(0.94); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html, body {
+  min-height: 100%;
+  background: #F7F3EE;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #1A1512;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-width: 320px;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: #E8654A30;
+}
+
+/* ─── Scrollbars ─────────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 768px) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #E8654A #F7F3EE;
+  }
+  *::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: #F7F3EE;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #E8654A;
+    border-radius: 9999px;
+  }
+}
+
+/* ─── Component layer ────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Dish card shell — used in SkeletonCard and as layout reference */
+  .card-dish {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03);
+  }
+
+  /* Shimmer skeleton — used in SkeletonCard */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #ECE7DE 25%,
+      #F7F3EE 50%,
+      #ECE7DE 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+    border-radius: 8px;
+  }
+
+  /* Page entry animation */
+  .animate-fade-up {
+    animation: fade-up 0.36s ease-out both;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.28s ease-out both;
+  }
+}
