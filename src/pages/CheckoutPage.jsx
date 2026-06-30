@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronLeft, ChevronUp, Loader2, Lock, ShoppingBag } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../config/api';
@@ -27,8 +27,14 @@ const loadRazorpaySdk = () => {
   return new Promise((resolve) => {
     const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
     if (existing) {
-      existing.addEventListener('load', () => resolve(true));
-      existing.addEventListener('error', () => resolve(false));
+      const handleLoad = () => { cleanup(); resolve(true); };
+      const handleError = () => { cleanup(); resolve(false); };
+      const cleanup = () => {
+        existing.removeEventListener('load', handleLoad);
+        existing.removeEventListener('error', handleError);
+      };
+      existing.addEventListener('load', handleLoad);
+      existing.addEventListener('error', handleError);
       return;
     }
     const script = document.createElement('script');
@@ -312,20 +318,30 @@ export default function CheckoutPage() {
           </span>
         </button>
 
-        {summaryOpen && (
-          <div className="mt-4 space-y-[8px] border-t border-border-warm pt-4">
-            {items.map((item) => (
-              <div key={item.menuItemId} className="flex items-center justify-between gap-3">
-                <span className="min-w-0 flex-1 truncate font-body text-[12px] text-near-black">
-                  {item.name} × {item.quantity}
-                </span>
-                <span className="font-body text-[12px] font-semibold text-muted">
-                  ₹{Math.round(item.subtotal).toLocaleString('en-IN')}
-                </span>
+        <AnimatePresence initial={false}>
+          {summaryOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 space-y-[8px] border-t border-border-warm pt-4">
+                {items.map((item) => (
+                  <div key={item.menuItemId} className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 flex-1 truncate font-body text-[12px] text-near-black">
+                      {item.name} × {item.quantity}
+                    </span>
+                    <span className="font-body text-[12px] font-semibold text-muted">
+                      ₹{Math.round(item.subtotal).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {errors.cart && (
@@ -391,78 +407,84 @@ export default function CheckoutPage() {
       </p>
 
       {/* Payment failed recovery */}
-      {paymentFailed && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-5 rounded-card border border-red-200 bg-red-50 p-4"
-        >
-          <div className="flex items-start gap-3">
-            <span className="text-[22px]">⚠️</span>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-heading text-[14px] font-bold text-near-black">
-                Payment not completed
-              </h3>
-              <p className="mt-1 font-body text-[12px] text-muted">
-                Your order has been saved. Retry payment or switch to cash.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setPaymentFailed(false);
-                    setIsLoading(true);
-                    try {
-                      const sdkLoaded = razorpayReady || (await loadRazorpaySdk());
-                      if (!sdkLoaded || !window.Razorpay) throw new Error('Unable to load Razorpay');
-                      const razorpay = new window.Razorpay({
-                        key: failedRazorpayData.razorpayKeyId,
-                        amount: failedRazorpayData.amount,
-                        currency: 'INR',
-                        name: restaurantConfig.name,
-                        order_id: failedRazorpayData.razorpayOrderId,
-                        prefill: { name: name.trim(), contact: `91${phone}` },
-                        theme: { color: '#E8654A' },
-                        // BUG FIX: pass failedOrderSnapshot as 3rd arg
-                        handler: (res) => verifyPayment(res, failedOrderId, failedOrderSnapshot),
-                        modal: {
-                          ondismiss: () => {
-                            setIsLoading(false);
-                            setPaymentFailed(true);
+      <AnimatePresence>
+        {paymentFailed && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="mt-5 rounded-card border border-red-200 bg-red-50 p-4"
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-[22px]">⚠️</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-heading text-[14px] font-bold text-near-black">
+                  Payment not completed
+                </h3>
+                <p className="mt-1 font-body text-[12px] text-muted">
+                  Your order has been saved. Retry payment or switch to cash.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setPaymentFailed(false);
+                      setIsLoading(true);
+                      try {
+                        const sdkLoaded = razorpayReady || (await loadRazorpaySdk());
+                        if (!sdkLoaded || !window.Razorpay) throw new Error('Unable to load Razorpay');
+                        const razorpay = new window.Razorpay({
+                          key: failedRazorpayData.failedRazorpayData.razorpayKeyId,
+                          amount: failedRazorpayData.amount,
+                          currency: 'INR',
+                          name: restaurantConfig.name,
+                          order_id: failedRazorpayData.razorpayOrderId,
+                          prefill: { name: name.trim(), contact: `91${phone}` },
+                          theme: { color: '#E8654A' },
+                          handler: (res) => verifyPayment(res, failedOrderId, failedOrderSnapshot),
+                          modal: {
+                            ondismiss: () => {
+                              setIsLoading(false);
+                              setPaymentFailed(true);
+                            },
                           },
-                        },
-                      });
-                      razorpay.open();
-                    } catch {
-                      toast.error('Unable to retry payment');
-                      setIsLoading(false);
-                      setPaymentFailed(true);
-                    }
-                  }}
-                  className="rounded-card-sm bg-coral px-4 py-[8px] font-heading text-[12px] font-bold text-white"
-                >
-                  Retry Payment
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      await api.patch(`/api/orders/${failedOrderId}/payment`, { paymentMethod: 'Cash' });
-                      clearCart();
-                      navigate(`/confirmation/${failedOrderId}?table=${tableNumber}`, { replace: true });
-                    } catch {
-                      toast.error('Could not switch to cash payment');
-                    }
-                  }}
-                  className="rounded-card-sm border border-near-black px-4 py-[8px] font-heading text-[12px] font-bold text-near-black"
-                >
-                  Pay Cash Instead
-                </button>
+                        });
+                        razorpay.open();
+                      } catch {
+                        toast.error('Unable to retry payment');
+                        setIsLoading(false);
+                        setPaymentFailed(true);
+                      }
+                    }}
+                    className="rounded-card-sm bg-coral px-4 py-[8px] font-heading text-[12px] font-bold text-white"
+                  >
+                    Retry Payment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await api.patch(`/api/orders/${failedOrderId}/payment`, { paymentMethod: 'Cash' });
+                        const updatedOrder = selectOrderPayload(res.data?.data || res.data, failedOrderSnapshot);
+                        clearCart();
+                        navigate(`/confirmation/${failedOrderId}?table=${tableNumber}`, { 
+                          replace: true, 
+                          state: { order: updatedOrder } 
+                        });
+                      } catch {
+                        toast.error('Could not switch to cash payment');
+                      }
+                    }}
+                    className="rounded-card-sm border border-near-black px-4 py-[8px] font-heading text-[12px] font-bold text-near-black"
+                  >
+                    Pay Cash Instead
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
