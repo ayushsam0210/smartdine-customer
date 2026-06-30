@@ -1,97 +1,98 @@
+import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 
 const getItemId = (item) => String(item?.menuItemId || item?.id || item?._id || '');
 const isVegItem = (item) => Boolean(item?.isVegetarian ?? item?.vegetarian ?? item?.isVeg);
 
+// Isolated Veg indicator component
 function VegDot({ isVegetarian }) {
   const color = isVegetarian ? '#16A34A' : '#DC2626';
   return (
     <div
       title={isVegetarian ? 'Vegetarian' : 'Non-vegetarian'}
       style={{ borderColor: color }}
-      className="mt-[1px] h-[14px] w-[14px] shrink-0 rounded-[3px] border-[1.5px] bg-white p-[2px]"
+      className="mt-[4px] h-[14px] w-[14px] shrink-0 rounded-[3px] border-[1.5px] bg-white p-[2px]"
     >
       <div className="h-full w-full rounded-full" style={{ backgroundColor: color }} />
     </div>
   );
 }
 
-export default function DishCard({ item, quantity = 0, onAdd, onRemove }) {
+function DishCard({ item, quantity = 0, onAdd, onRemove }) {
   const itemId = getItemId(item);
   const isVegetarian = isVegItem(item);
   const price = Number(item?.price || 0);
   const imageUrl = item?.imageUrl || item?.image || '';
   const initial = item?.name?.charAt(0)?.toUpperCase() || 'S';
 
+  // React state handles dynamic asset errors predictably
+  const [imageError, setImageError] = useState(false);
+  const showImage = imageUrl && !imageError;
+
   return (
-    <article className="mb-2 flex items-start gap-3 rounded-card bg-surface p-[14px] shadow-card">
-      {/* Dish image */}
-      <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-image bg-near-black">
-        {imageUrl ? (
+    <article className="mb-2 flex items-start gap-3 rounded-card bg-surface p-[14px] shadow-card min-h-[112px]">
+      {/* Thumbnail Container */}
+      <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-image bg-near-black relative">
+        {showImage ? (
           <img
             src={imageUrl}
             alt={item?.name}
             className="h-full w-full object-cover transition-opacity duration-300"
             loading="lazy"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              if (e.target.nextElementSibling) {
-                e.target.nextElementSibling.style.display = 'flex';
-              }
-            }}
+            onError={() => setImageError(true)}
           />
-        ) : null}
-        <div
-          className="h-full w-full items-center justify-center bg-gradient-to-br from-near-black to-dark-brown font-display text-[30px] font-bold text-white"
-          style={{ display: imageUrl ? 'none' : 'flex' }}
-        >
-          {initial}
-        </div>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-near-black to-dark-brown font-display text-[30px] font-bold text-white uppercase select-none">
+            {initial}
+          </div>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Name row with veg indicator */}
-        <div className="flex items-start gap-2">
-          <VegDot isVegetarian={isVegetarian} />
-          <h3
-            className="font-heading text-[14px] font-semibold leading-[1.4] text-near-black"
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {item?.name}
-          </h3>
+      {/* Main Details Wrapper */}
+      <div className="flex min-w-0 flex-1 flex-col min-h-[84px] justify-between">
+        <div>
+          {/* Header Row */}
+          <div className="flex items-start gap-2">
+            <VegDot isVegetarian={isVegetarian} />
+            <h3
+              className="font-heading text-[14px] font-semibold leading-[1.3] text-near-black break-words line-clamp-2"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {item?.name}
+            </h3>
+          </div>
+
+          {/* Item Description */}
+          {item?.description && (
+            <p className="mt-[4px] font-body text-[12px] leading-[1.4] text-muted line-clamp-1">
+              {item.description}
+            </p>
+          )}
         </div>
 
-        {/* Description */}
-        {item?.description && (
-          <p className="mt-[5px] truncate font-body text-[12px] leading-[1.5] text-muted">
-            {item.description}
-          </p>
-        )}
-
-        {/* Price + Controls */}
-        <div className="mt-[10px] flex items-center justify-between gap-2">
-          <p className="font-heading text-[15px] font-bold text-near-black">
+        {/* Action Controls Row */}
+        <div className="mt-2 flex items-center justify-between gap-2 pt-1">
+          <p className="font-heading text-[15px] font-bold text-near-black shrink-0">
             ₹{price.toLocaleString('en-IN')}
           </p>
 
           {quantity === 0 ? (
             <motion.button
               type="button"
-              whileTap={{ scale: 0.91 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+              whileTap={{ scale: 0.94 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 22 }}
               onClick={() => onAdd?.(item)}
-              className="h-[30px] w-[68px] rounded-pill bg-coral font-heading text-[11px] font-bold tracking-[0.3px] text-white shadow-coral-glow transition-colors hover:bg-coral-dark active:bg-coral-dark"
+              className="h-[30px] w-[68px] rounded-pill bg-coral font-heading text-[11px] font-bold tracking-[0.3px] text-white shadow-coral-glow transition-colors hover:bg-coral-dark active:bg-coral-dark shrink-0"
             >
               ADD +
             </motion.button>
           ) : (
-            <div className="flex items-center gap-[6px]">
+            <div className="flex items-center gap-[6px] shrink-0">
               <button
                 type="button"
                 aria-label={`Remove one ${item?.name}`}
@@ -101,7 +102,7 @@ export default function DishCard({ item, quantity = 0, onAdd, onRemove }) {
                 −
               </button>
 
-              <span className="min-w-[20px] text-center font-heading text-[14px] font-bold text-near-black">
+              <span className="min-w-[20px] text-center font-heading text-[14px] font-bold text-near-black select-none">
                 {quantity}
               </span>
 
@@ -120,3 +121,6 @@ export default function DishCard({ item, quantity = 0, onAdd, onRemove }) {
     </article>
   );
 }
+
+// Wrap in memo to guarantee list filtering remains lightweight and fast
+export default memo(DishCard);
