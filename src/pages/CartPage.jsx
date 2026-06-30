@@ -21,16 +21,23 @@ export default function CartPage() {
   const validTable = isValidTableNumber(tableParam);
 
   const {
-    items, itemCount, subtotal,
-    addItem, removeItem, setTableNumber,
-    specialInstructions, setSpecialInstructions,
+    items = [], 
+    itemCount = 0, 
+    subtotal = 0,
+    addItem, 
+    removeItem, 
+    setTableNumber,
+    specialInstructions = '', // Fallback at context destructure level to prevent input type switching
+    setSpecialInstructions,
   } = useCart();
-  const { gstRate, serviceChargeRate } = useSettings();
+  
+  const { gstRate = 0, serviceChargeRate = 0 } = useSettings();
 
   useEffect(() => {
     if (validTable) setTableNumber(tableNumber);
   }, [setTableNumber, tableNumber, validTable]);
 
+  // Safely compute the total breakdown
   const total = useMemo(
     () => calculateOrderTotals(subtotal, gstRate, serviceChargeRate).total,
     [gstRate, serviceChargeRate, subtotal],
@@ -63,7 +70,7 @@ export default function CartPage() {
       </header>
 
       {items.length === 0 ? (
-        /* Empty state */
+        /* Empty state view */
         <section className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-coral-light">
             <ShoppingBag size={40} color="#E8654A" strokeWidth={1.6} />
@@ -89,11 +96,18 @@ export default function CartPage() {
             <p className="mb-3 font-body text-[12px] text-muted">
               {itemCount} {itemCount === 1 ? 'item' : 'items'} in your order
             </p>
-            <AnimatePresence initial={false} mode="popLayout">
-              {items.map((item) => (
-                <CartItem key={item.menuItemId} item={item} onAdd={addItem} onRemove={removeItem} />
-              ))}
-            </AnimatePresence>
+            <div className="relative space-y-2">
+              <AnimatePresence initial={false} mode="popLayout">
+                {items.map((item) => (
+                  <CartItem 
+                    key={item.menuItemId} 
+                    item={item} 
+                    onAdd={addItem} 
+                    onRemove={removeItem} 
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
           </section>
 
           {/* Special instructions */}
@@ -102,7 +116,7 @@ export default function CartPage() {
               Special Instructions
             </h2>
             <textarea
-              value={specialInstructions || ''}
+              value={specialInstructions}
               onChange={(e) => setSpecialInstructions(e.target.value)}
               placeholder="Any special requests? (e.g. less spicy, no onion, allergy notes)"
               className="w-full resize-none rounded-card-sm border border-border-warm bg-surface px-4 py-3 font-body text-[13px] text-near-black shadow-input outline-none transition-colors placeholder:text-muted-light focus:border-coral"
@@ -113,7 +127,7 @@ export default function CartPage() {
           {/* Bill summary */}
           <OrderSummary subtotal={subtotal} gstRate={gstRate} serviceChargeRate={serviceChargeRate} />
 
-          {/* ─── Checkout CTA — FIXED: was bg-near-black on bg-near-black ─── */}
+          {/* Checkout Action Bar */}
           <div className="fixed inset-x-0 bottom-0 z-50 bg-beige/90 px-4 pb-[max(20px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm">
             <button
               type="button"
