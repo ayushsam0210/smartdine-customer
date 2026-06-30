@@ -27,23 +27,40 @@ const sortCategories = (categories) => {
   return [...known, ...custom];
 };
 
-const groupByCategory = (menuItems) => {
-  const grouped = menuItems.reduce((acc, item) => {
-    const category = item.category || 'Specials';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(item);
-    return acc;
-  }, {});
+const processMenuData = (menuItems, vegOnly) => {
+  // 1. Single-pass Filter
+  const filtered = vegOnly
+    ? menuItems.filter((item) => Boolean(item.isVegetarian ?? item.vegetarian ?? item.isVeg))
+    : menuItems;
 
-  return sortCategories(Object.keys(grouped)).reduce((acc, category) => {
-    acc[category] = grouped[category];
-    return acc;
-  }, {});
+  // 2. Group items natively
+  const grouped = {};
+  for (let i = 0; i < filtered.length; i++) {
+    const item = filtered[i];
+    const category = item.category || 'Specials';
+    if (!grouped[category]) grouped[category] = [];
+    grouped[category].push(item);
+  }
+
+  // 3. Sort Categories and build final output map simultaneously
+  const sortedKeys = sortCategories(Object.keys(grouped));
+  const groupedItems = {};
+  
+  for (let i = 0; i < sortedKeys.length; i++) {
+    const key = sortedKeys[i];
+    groupedItems[key] = grouped[key];
+  }
+
+  return {
+    items: filtered,
+    categories: sortedKeys,
+    groupedItems,
+  };
 };
 
 export function useMenu({ enabled = true } = {}) {
   const [allItems, setAllItems] = useState([]);
-  const [items, setItems] = useState([]);
+  const [vegOnly, setVegOnly] = useState(false);
   const [loading, setLoading] = useState(Boolean(enabled));
   const [error, setError] = useState('');
 
@@ -60,7 +77,6 @@ export function useMenu({ enabled = true } = {}) {
       const response = await api.get('/api/menu?available=true');
       const menuItems = getMenuArray(response.data);
       setAllItems(menuItems);
-      setItems(menuItems);
       return menuItems;
     } catch (err) {
       const message = typeof err === 'string' ? err : 'Unable to load menu.';
@@ -71,16 +87,10 @@ export function useMenu({ enabled = true } = {}) {
     }
   }, [enabled]);
 
-  const filterByVeg = useCallback(
-    (vegOnly) => {
-      const filteredItems = vegOnly
-        ? allItems.filter((item) => Boolean(item.isVegetarian ?? item.vegetarian ?? item.isVeg))
-        : allItems;
-      setItems(filteredItems);
-      return filteredItems;
-    },
-    [allItems],
-  );
+  // Expose filtering as a controlled dynamic primitive state trigger
+  const filterByVeg = useCallback((isVeg) => {
+    setVegOnly(Boolean(isVeg));
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
@@ -90,8 +100,19 @@ export function useMenu({ enabled = true } = {}) {
     fetchMenu();
   }, [enabled, fetchMenu]);
 
-  const groupedItems = useMemo(() => groupByCategory(items), [items]);
-  const categories = useMemo(() => sortCategories(Object.keys(groupedItems)), [groupedItems]);
+  // Single cleanly calculated dependency engine
+  const pipelineResult = useMemo(() => {
+    return processMenuData(allItems, vegOnly);
+  }, [allItems, vegOnly]);
 
-  return { items, categories, groupedItems, loading, error, fetchMenu, filterByVeg };
+  return {
+    items: pipelineResult.items,
+    categories: pipelineResult.categories,
+    groupedItems: pipelineResult.groupedItems,
+    loading,
+    error,
+    fetchMenu,
+    filterByVeg,
+    isVegFiltered: vegOnly, // Useful extension to check current state
+  };
 }
