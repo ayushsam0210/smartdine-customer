@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 
-export default function CartItem({ item, onAdd, onRemove }) {
+function CartItem({ item, onAdd, onRemove }) {
   const imageUrl = item.imageUrl || item.image || '';
   const initial = item.name?.charAt(0)?.toUpperCase() || 'S';
   const subtotal = Number(item.price || 0) * Number(item.quantity || 0);
@@ -10,15 +11,32 @@ export default function CartItem({ item, onAdd, onRemove }) {
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+      // Fixed layout collapse by explicitly forcing padding scaling alongside height clipping
+      exit={{ 
+        opacity: 0, 
+        height: 0, 
+        paddingTop: 0, 
+        paddingBottom: 0, 
+        marginBottom: 0,
+        transition: {
+          opacity: { duration: 0.15 },
+          default: { duration: 0.22, ease: 'easeInOut' }
+        }
+      }}
       transition={{ duration: 0.22, ease: 'easeOut' }}
-      className="mb-2 overflow-hidden rounded-card bg-surface p-[14px] shadow-card"
+      className="overflow-hidden rounded-card bg-surface p-[14px] shadow-card"
     >
-      <div className="flex items-center gap-3">
-        {/* Thumbnail */}
+      {/* Absolute bounding box container handles layout constraints during exit collapse */}
+      <div className="flex items-center gap-3 min-w-0 w-full">
+        {/* Thumbnail Image / Placeholder */}
         <div className="h-[68px] w-[68px] shrink-0 overflow-hidden rounded-image bg-near-black">
           {imageUrl ? (
-            <img src={imageUrl} alt={item.name} className="h-full w-full object-cover" loading="lazy" />
+            <img 
+              src={imageUrl} 
+              alt={item.name} 
+              className="h-full w-full object-cover" 
+              loading="lazy" 
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-near-black to-dark-brown font-display text-[26px] font-bold text-white">
               {initial}
@@ -26,7 +44,7 @@ export default function CartItem({ item, onAdd, onRemove }) {
           )}
         </div>
 
-        {/* Content */}
+        {/* Content Details Block */}
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-heading text-[14px] font-semibold text-near-black">
             {item.name}
@@ -40,8 +58,8 @@ export default function CartItem({ item, onAdd, onRemove }) {
               ₹{Math.round(subtotal).toLocaleString('en-IN')}
             </p>
 
-            {/* Qty controls */}
-            <div className="flex items-center gap-[6px]">
+            {/* Quantity Operations Layout */}
+            <div className="flex items-center gap-[6px] shrink-0">
               <button
                 type="button"
                 aria-label={`Remove one ${item.name}`}
@@ -68,3 +86,6 @@ export default function CartItem({ item, onAdd, onRemove }) {
     </motion.article>
   );
 }
+
+// Wrap in memo to guarantee neighbor nodes don't re-render on localized counter updates
+export default memo(CartItem);
