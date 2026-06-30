@@ -4,6 +4,7 @@ import { restaurantConfig } from '../config/restaurant';
 
 let settingsCache = null;
 let settingsPromise = null;
+const listeners = new Set();
 
 const defaultSettings = {
   gstRate: 0,
@@ -17,12 +18,26 @@ const normaliseSettings = (data) => ({
   restaurantName: data?.restaurantName || data?.name || defaultSettings.restaurantName,
 });
 
+// Broadcasts changes to all active components using the hook concurrently
+const broadcast = () => {
+  listeners.forEach((listener) => listener(settingsCache));
+};
+
 export function useSettings() {
   const [settings, setSettings] = useState(settingsCache || defaultSettings);
   const [loading, setLoading] = useState(!settingsCache);
 
   useEffect(() => {
     let isMounted = true;
+
+    // Track this component's local state updater
+    const handleUpdate = (newSettings) => {
+      if (isMounted) {
+        setSettings(newSettings);
+        setLoading(false);
+      }
+    };
+    listeners.add(handleUpdate);
 
     const loadSettings = async () => {
       if (settingsCache) {
@@ -31,8 +46,6 @@ export function useSettings() {
         return;
       }
 
-      setLoading(true);
-
       try {
         if (!settingsPromise) {
           settingsPromise = api.get('/api/settings/public');
@@ -40,13 +53,13 @@ export function useSettings() {
 
         const response = await settingsPromise;
         settingsCache = normaliseSettings(response.data?.settings || response.data?.data || response.data);
-
-        if (isMounted) {
-          setSettings(settingsCache);
-        }
-      } catch {
-        settingsCache = defaultSettings;
+        
+        broadcast();
+      } catch (error) {
+        // Clear both trackers on error so a future mount can attempt auto-recovery
+        settingsCache = null;
         settingsPromise = null;
+        
         if (isMounted) {
           setSettings(defaultSettings);
         }
@@ -61,6 +74,7 @@ export function useSettings() {
 
     return () => {
       isMounted = false;
+      listeners.delete(handleUpdate);
     };
   }, []);
 
