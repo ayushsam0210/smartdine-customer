@@ -1,24 +1,36 @@
-export default function SkeletonCard() {
-  return (
-    <div className="card-dish mb-2" aria-hidden="true">
-      {/* Image skeleton */}
-      <div className="skeleton h-[84px] w-[84px] shrink-0 rounded-image" />
+import { memo } from 'react';
 
-      {/* Content skeleton */}
-      <div className="min-w-0 flex-1">
-        {/* Name line */}
-        <div className="flex items-center gap-2">
-          <div className="skeleton h-[14px] w-[14px] shrink-0 rounded-[3px]" />
-          <div className="skeleton h-[14px] flex-1 max-w-[60%] rounded-md" />
+function SkeletonCard() {
+  return (
+    <div 
+      className="mb-2 flex items-start gap-3 rounded-card bg-surface p-[14px] shadow-card select-none pointer-events-none" 
+      aria-hidden="true"
+    >
+      {/* Thumbnail Image Skeleton Container */}
+      <div className="skeleton h-[84px] w-[84px] shrink-0 rounded-image bg-near-black/5 animate-pulse" />
+
+      {/* Details Meta Block Skeleton */}
+      <div className="min-w-0 flex-1 flex flex-col justify-between min-h-[84px]">
+        <div>
+          {/* Top Line: Veg Indicator Box + Dish Title Bar */}
+          <div className="flex items-center gap-2">
+            <div className="skeleton h-[14px] w-[14px] shrink-0 rounded-[3px] bg-near-black/5 animate-pulse" />
+            <div className="skeleton h-[14px] flex-1 max-w-[65%] rounded bg-near-black/5 animate-pulse" />
+          </div>
+          
+          {/* Second Line: Sub-description Bar */}
+          <div className="skeleton mt-[10px] h-[12px] w-[45%] rounded bg-near-black/5 animate-pulse" />
         </div>
-        {/* Description line */}
-        <div className="skeleton mt-[8px] h-[12px] w-[45%] rounded-md" />
-        {/* Price + button row */}
-        <div className="mt-[14px] flex items-center justify-between">
-          <div className="skeleton h-[15px] w-[52px] rounded-md" />
-          <div className="skeleton h-[30px] w-[68px] rounded-pill" />
+
+        {/* Bottom Line: Price Tag Box + Action Button Pill */}
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <div className="skeleton h-[15px] w-[52px] rounded bg-near-black/5 animate-pulse" />
+          <div className="skeleton h-[30px] w-[68px] rounded-pill bg-near-black/5 animate-pulse" />
         </div>
       </div>
     </div>
   );
 }
+
+// Wrap inside memo to ensure skeleton tracks don't re-compute during list mount transitions
+export default memo(SkeletonCard);
