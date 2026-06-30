@@ -3,11 +3,17 @@ import { useEffect, useRef } from 'react';
 export default function CategoryTabs({ categories = [], active, onChange, categoryImages = {} }) {
   const pillRefs = useRef({});
   const scrollRef = useRef(null);
+  const isAutoScrolling = useRef(false);
 
   useEffect(() => {
     const activePill = pillRefs.current[active];
     if (activePill) {
-      activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      // Prevent running if the user is actively touch-dragging the element list
+      activePill.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
     }
   }, [active]);
 
@@ -17,7 +23,9 @@ export default function CategoryTabs({ categories = [], active, onChange, catego
     <nav className="sticky top-0 z-30 bg-beige/95 backdrop-blur-sm">
       <div
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto px-4 py-3 [-webkit-overflow-scrolling:touch]"
+        // Custom Tailwind utilities hidden scrollbar tracks natively
+        className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-none [-webkit-overflow-scrolling:touch]"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {categories.map((category) => {
           const isActive = category === active;
@@ -26,7 +34,14 @@ export default function CategoryTabs({ categories = [], active, onChange, catego
           return (
             <button
               key={category}
-              ref={(node) => { pillRefs.current[category] = node; }}
+              // Functional ref handler ensures dead elements wipe automatically on component mount updates
+              ref={(node) => {
+                if (node) {
+                  pillRefs.current[category] = node;
+                } else {
+                  delete pillRefs.current[category];
+                }
+              }}
               type="button"
               onClick={() => onChange?.(category)}
               className={
@@ -41,7 +56,7 @@ export default function CategoryTabs({ categories = [], active, onChange, catego
                   {img ? (
                     <img src={img} alt="" className="h-full w-full object-cover" loading="lazy" />
                   ) : (
-                    <span>
+                    <span className="text-[12px]">
                       {category === 'Starters' ? '🥗'
                         : category === 'Main Course' ? '🍛'
                         : category === 'Breads' ? '🫓'
@@ -58,7 +73,7 @@ export default function CategoryTabs({ categories = [], active, onChange, catego
           );
         })}
       </div>
-      {/* Subtle bottom border */}
+      {/* Subtle division border line */}
       <div className="h-px w-full bg-border-warm" />
     </nav>
   );
