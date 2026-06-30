@@ -53,7 +53,7 @@ export function CartProvider({ children }) {
     try {
       window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
     } catch {
-      // Ignore storage errors so ordering still works in restrictive/private browsers.
+      // Ignore storage blockages gracefully
     }
   }, [cart]);
 
@@ -123,7 +123,6 @@ export function CartProvider({ children }) {
 
   const setTableNumber = useCallback((n) => {
     setCart((current) => {
-      // If table number changes, clear cart items to prevent cross-table contamination
       if (current.tableNumber !== null && current.tableNumber !== n) {
         return { ...defaultCartState, tableNumber: n };
       }
@@ -140,33 +139,53 @@ export function CartProvider({ children }) {
     [cart.items],
   );
 
-  const value = useMemo(() => {
-    const itemCount = cart.items.reduce((total, item) => total + item.quantity, 0);
-    const subtotal = cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+  // Compute values dynamically based only on changing items arrays
+  const { itemCount, subtotal } = useMemo(() => {
+    return cart.items.reduce(
+      (acc, item) => {
+        acc.itemCount += item.quantity;
+        acc.subtotal += item.price * item.quantity;
+        return acc;
+      },
+      { itemCount: 0, subtotal: 0 }
+    );
+  }, [cart.items]);
 
-    return {
-      ...cart,
-      addItem,
-      removeItem,
-      updateQuantity,
-      clearCart,
-      setTableNumber,
-      setSpecialInstructions,
-      itemCount,
-      subtotal,
-      getItemQuantity,
-    };
-  }, [addItem, cart, clearCart, getItemQuantity, removeItem, setSpecialInstructions, setTableNumber, updateQuantity]);
+  const contextValue = useMemo(() => ({
+    items: cart.items,
+    tableNumber: cart.tableNumber,
+    specialInstructions: cart.specialInstructions,
+    itemCount,
+    subtotal,
+    addItem,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    setTableNumber,
+    setSpecialInstructions,
+    getItemQuantity,
+  }), [
+    cart.items,
+    cart.tableNumber,
+    cart.specialInstructions,
+    itemCount,
+    subtotal,
+    addItem,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    setTableNumber,
+    setSpecialInstructions,
+    getItemQuantity,
+  ]);
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return <CartContext.Provider value={contextValue}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {
   const context = useContext(CartContext);
-
   if (!context) {
     throw new Error('useCart must be used within a CartProvider');
   }
-
   return context;
 }
