@@ -1,47 +1,58 @@
+import { memo, useState } from 'react';
 import { restaurantConfig } from '../../config/restaurant';
 
-export default function MenuHeader({ restaurantName = restaurantConfig.name, tableNumber }) {
+function MenuHeader({ restaurantName = restaurantConfig.name, tableNumber }) {
   const hasHero = Boolean(restaurantConfig.heroImage);
+  const [logoLoaded, setLogoLoaded] = useState(false);
+
+  // Fallback string parser to ensure safe visual badge rendering
+  const cleanTableNumber = tableNumber ? String(tableNumber) : '—';
 
   return (
-    <header className="bg-beige px-4 pb-4 pt-5">
+    <header className="bg-beige px-4 pb-4 pt-5 select-none">
       {/* Top bar: logo/name + table badge */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
+      <div className="flex h-8 items-center justify-between gap-4">
+        <div className="min-w-0 flex items-center">
           {restaurantConfig.logoUrl ? (
-            <img
-              src={restaurantConfig.logoUrl}
-              alt={restaurantName}
-              className="max-h-7 w-auto object-contain"
-            />
+            <div className={`relative max-h-7 transition-opacity duration-200 ${logoLoaded ? 'opacity-100' : 'opacity-0 w-24 bg-near-black/5 animate-pulse h-6 rounded'}`}>
+              <img
+                src={restaurantConfig.logoUrl}
+                alt={`${restaurantName} Logo`}
+                className="max-h-7 w-auto object-contain"
+                onLoad={() => setLogoLoaded(true)}
+              />
+            </div>
           ) : (
-            <span className="font-heading text-[13px] font-bold text-muted uppercase tracking-[1.5px]">
+            <h2 className="font-heading text-[13px] font-bold text-muted uppercase tracking-[1.5px] truncate">
               {restaurantName}
-            </span>
+            </h2>
           )}
         </div>
 
-        <div className="shrink-0 rounded-pill bg-near-black px-4 py-[7px] font-heading text-[11px] font-bold text-white">
-          Table {tableNumber}
+        {/* Dynamic Table Indicator Badge */}
+        <div className="shrink-0 rounded-pill bg-near-black px-4 py-[7px] font-heading text-[11px] font-bold text-white shadow-sm">
+          Table {cleanTableNumber}
         </div>
       </div>
 
-      {/* Title */}
+      {/* Main Title Header */}
       <h1 className="mt-4 font-display text-[42px] font-bold leading-none tracking-[-1.5px] text-near-black">
         Menu
       </h1>
 
-      {/* Hero banner */}
-      <div className="relative mt-4 h-[190px] w-full overflow-hidden rounded-hero">
-        {/* Background */}
+      {/* Hero / Brand Art Banner Box */}
+      <div className="relative mt-4 h-[190px] w-full overflow-hidden rounded-hero bg-near-black shadow-inner">
+        {/* Background Visual Render Engine */}
         {hasHero ? (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${restaurantConfig.heroImage})` }}
+          <img 
+            src={restaurantConfig.heroImage} 
+            alt="" // Decorative background placeholder
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            loading="eager"
           />
         ) : (
           <div className="absolute inset-0 bg-hero-dark">
-            {/* Subtle geometric pattern */}
+            {/* Subtle radial canvas light pattern */}
             <div
               className="absolute inset-0 opacity-10"
               style={{
@@ -49,7 +60,7 @@ export default function MenuHeader({ restaurantName = restaurantConfig.name, tab
                   'radial-gradient(circle at 20% 50%, #E8654A 0%, transparent 50%), radial-gradient(circle at 80% 20%, #C8922A 0%, transparent 50%)',
               }}
             />
-            {/* Grid lines */}
+            {/* Architectural Grid Mesh Overlay */}
             <div
               className="absolute inset-0 opacity-[0.04]"
               style={{
@@ -58,32 +69,33 @@ export default function MenuHeader({ restaurantName = restaurantConfig.name, tab
                 backgroundSize: '32px 32px',
               }}
             />
-            {/* Centered restaurant name */}
+            {/* Minimal Brand Fallback Display */}
             <div className="flex h-full items-center justify-center px-6">
-              <p className="font-display text-[32px] font-bold leading-none text-white tracking-[-0.5px] text-center">
+              <p className="font-display text-[32px] font-bold leading-none text-white tracking-[-0.5px] text-center line-clamp-2">
                 {restaurantName}
               </p>
             </div>
           </div>
         )}
 
-        {/* Gradient overlay for hero images */}
-        {hasHero && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-        )}
+        {/* Protective Bottom Gradient Tint Mask */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10 pointer-events-none" />
 
-        {/* Rating pill */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-[6px] rounded-pill bg-white/95 px-3 py-[6px] backdrop-blur-sm">
-          <span className="text-[11px]">⭐</span>
+        {/* Rating & Core Delivery Meta Pill */}
+        <div className="absolute bottom-3 left-3 flex items-center gap-[6px] rounded-pill bg-white px-3 py-[6px] shadow-md border border-black/5">
+          <span className="text-[11px]" aria-hidden="true">⭐</span>
           <span className="font-heading text-[11px] font-bold text-near-black">
-            {restaurantConfig.rating}
+            {restaurantConfig.rating || '0.0'}
           </span>
-          <span className="h-3 w-px bg-near-black/20" />
-          <span className="font-body text-[11px] text-muted">
-            {restaurantConfig.deliveryTime}
+          <span className="h-3 w-px bg-near-black/20" aria-hidden="true" />
+          <span className="font-body text-[11px] font-medium text-near-black/70">
+            {restaurantConfig.deliveryTime || '— mins'}
           </span>
         </div>
       </div>
     </header>
   );
 }
+
+// Wrap inside React.memo to completely decouple layout shifts from live list tracking updates
+export default memo(MenuHeader);
