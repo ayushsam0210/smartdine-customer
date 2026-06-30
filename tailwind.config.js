@@ -65,16 +65,18 @@ export default {
           '0%': { backgroundPosition: '200% 0' },
           '100%': { backgroundPosition: '-200% 0' },
         },
-        pulse: {
-          '0%, 100%': { opacity: '0.6' },
+        // FIXED: Renamed to prevent colliding with Tailwind's core 'pulse' keyframe
+        'pulse-custom': {
+          '0%': { opacity: '0.6' },
           '50%': { opacity: '1' },
+          '100%': { opacity: '0.6' }, // Explicit 100% ensures smooth infinity looping
         },
       },
       animation: {
         'fade-up': 'fade-up 0.36s ease-out both',
         'scale-in': 'scale-in 0.28s ease-out both',
         shimmer: 'shimmer 1.6s ease-in-out infinite',
-        'pulse-slow': 'pulse 2s ease-in-out infinite',
+        'pulse-slow': 'pulse-custom 2s ease-in-out infinite',
       },
     },
   },
