@@ -2,12 +2,11 @@ import { memo, useState } from 'react';
 import { restaurantConfig } from '../../config/restaurant';
 
 // Move static evaluations outside the component scope so they evaluate exactly ONCE on initial module compile
-// Safer static initialization
-const HAS_HERO = Boolean(restaurantConfig?.heroImage);
-const STATIC_RATING = restaurantConfig?.rating ?? '0.0';
-const STATIC_DELIVERY = restaurantConfig?.deliveryTime ?? '— mins';
-const STATIC_LOGO = restaurantConfig?.logoUrl;
-const FALLBACK_NAME = restaurantConfig?.name ?? 'Menu';
+const HAS_HERO = Boolean(restaurantConfig.heroImage);
+const STATIC_RATING = restaurantConfig.rating || '0.0';
+const STATIC_DELIVERY = restaurantConfig.deliveryTime || '— mins';
+const STATIC_LOGO = restaurantConfig.logoUrl;
+const FALLBACK_NAME = restaurantConfig.name;
 
 function MenuHeader({ restaurantName = FALLBACK_NAME, tableNumber }) {
   const [logoLoaded, setLogoLoaded] = useState(false);
